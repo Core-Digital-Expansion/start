@@ -25,6 +25,9 @@ import sys
 
 ORG = "Core-Digital-Expansion"
 REPOS = ["protocols", "client-state"]
+# Setup carries on without these if the person's GitHub account can't see them.
+# client-state is limited to some teams, so not every new hire has it on day one.
+OPTIONAL = {"client-state"}
 DEFAULT_DIR = pathlib.Path.home() / "CDE"
 
 
@@ -96,7 +99,12 @@ def main():
             continue
         say(f"  {repo}: cloning")
         url = f"https://github.com/{ORG}/{repo}.git"
-        if not run(["git", "clone", "-q", url, str(target)], dry):
+        ok = run(["git", "clone", "-q", url, str(target)], dry, check_ok=repo not in OPTIONAL)
+        if not ok and repo in OPTIONAL:
+            say(f"  {repo}: skipped. Your GitHub account doesn't have access to it yet.\n"
+                f"     That's fine: setup carries on without it. Ask the account lead if you need it.")
+            continue
+        if not ok:
             die(f"couldn't clone {repo}.\n"
                 f"  This is almost always one of two things:\n"
                 f"    1. You haven't accepted a GitHub invite to the {ORG} org yet.\n"
